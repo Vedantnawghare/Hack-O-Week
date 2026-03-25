@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SITBOT</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="chat-wrapper">
+
+    <div class="chat-header">
+        <img src="/static/logo.png">
+        <span>SITBOT</span>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Ask something..." autocomplete="off">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+<script>
+function quickSend(text) {
+    document.getElementById("user-input").value = text;
+    sendMessage();
+}
+
+function toggleMore(btn) {
+    const more = document.getElementById("more-options");
+    more.classList.toggle("hidden");
+    btn.innerHTML = more.classList.contains("hidden") ? "➕ More" : "➖ Less";
+}
+
+function sendMessage() {
+    const input = document.getElementById("user-input");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatBox = document.getElementById("chat-box");
+
+    // Remove old suggestion rows
+    document.querySelectorAll(".suggestion-row").forEach(e => e.remove());
+
+    // User message
+    const userDiv = document.createElement("div");
+    userDiv.className = "user-msg";
+    userDiv.innerHTML = `<div class="bubble">${msg}</div>`;
+    chatBox.appendChild(userDiv);
+    input.value = "";
+
+    fetch("/get", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "msg=" + encodeURIComponent(msg)
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        // Typing indicator
+        const typingDiv = document.createElement("div");
+        typingDiv.className = "bot-msg";
+        typingDiv.innerHTML = `
+            <img src="/static/logo.png">
+            <div class="bubble typing-bubble">
+                SITBOT is typing<span class="dots"></span>
+            </div>
+        `;
+        chatBox.appendChild(typingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        setTimeout(() => {
+            typingDiv.remove();
+
+            const botDiv = document.createElement("div");
+            botDiv.className = "bot-msg";
+            botDiv.innerHTML = `
+                <img src="/static/logo.png">
+                <div class="bubble">
+                    ${data.replace(
+                        /(https?:\/\/[^\s]+)/g,
+                        '<a href="$1" target="_blank">$1</a>'
+                    )}
+                </div>
+            `;
+            chatBox.appendChild(botDiv);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 800);
+    });
+}
+
+document.getElementById("user-input")
+    .addEventListener("keypress", e => {
+        if (e.key === "Enter") sendMessage();
+    });
+</script>
+
+</body>
+</html>

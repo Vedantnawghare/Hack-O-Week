@@ -1,0 +1,115 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.chat-wrapper {
+    width: 380px;
+    height: 600px;
+    background: #fff;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+.chat-header {
+    background: #c70000;
+    color: white;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.chat-header img,
+.bot-msg img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+#chat-box {
+    flex: 1;
+    padding: 12px 10px;
+    overflow-y: auto;
+    background: #f5f5f5;
+}
+
+.bot-msg {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.bot-msg .bubble {
+    background: white;
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 75%;
+}
+
+.user-msg {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.user-msg .bubble {
+    background: #c70000;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 75%;
+}
+
+.typing-bubble {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.dots::after {
+    content: '';
+    animation: dots 1.2s steps(3, end) infinite;
+}
+
+@keyframes dots {
+    0%   { content: ''; }
+    33%  { content: '.'; }
+    66%  { content: '..'; }
+    100% { content: '...'; }
+}
+
+.input-area {
+    display: flex;
+    gap: 6px;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.input-area input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.input-area button {
+    background: #c70000;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    cursor: pointer;
+}
+
+.input-area button:hover {
+    background: #a80000;
+}
