@@ -1,0 +1,213 @@
+# Generated from: iot_data_cleaning (1).ipynb
+# Converted at: 2026-04-02T05:31:40.894Z
+# Next step (optional): refactor into modules & generate tests with RunCell
+# Quick start: pip install runcell
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+
+warnings.filterwarnings('ignore')
+
+df = pd.read_csv('iot sensor.csv')
+
+print('=' * 60)
+print(f'Dataset Shape: {df.shape[0]:,} rows × {df.shape[1]} columns')
+print('=' * 60)
+
+print('\nColumn Data Types:')
+print(df.dtypes)
+
+print('\nFirst 5 Rows:')
+display(df.head())
+
+print('\nDataset Info:')
+df.info()
+
+print('\nBasic Statistics (numerical columns):')
+display(df.describe().round(4))
+
+print('\nSensor Type Distribution:')
+display(df['sensor_type'].value_counts())
+
+missing_count = df.isnull().sum()
+missing_pct   = (missing_count / len(df) * 100).round(2)
+
+missing_df = pd.DataFrame({
+    'Missing Count': missing_count,
+    'Missing %': missing_pct
+})
+
+print('Missing Value Report:')
+display(missing_df)
+
+fig, ax = plt.subplots(figsize=(12, 3))
+sns.heatmap(df.isnull(), cbar=False, yticklabels=False, cmap='viridis', ax=ax)
+ax.set_title('Missing Value Heatmap (yellow = missing)', fontsize=13)
+plt.tight_layout()
+plt.show()
+
+print(f'\nTotal missing cells: {missing_count.sum()}')
+
+outlier_report = {}
+
+for col in num_cols:
+    Q1  = df_clean[col].quantile(0.25)
+    Q3  = df_clean[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
+
+    n_outliers = ((df_clean[col] < lower) | (df_clean[col] > upper)).sum()
+    outlier_report[col] = {
+        'Q1': round(Q1, 4), 'Q3': round(Q3, 4), 'IQR': round(IQR, 4),
+        'Lower Bound': round(lower, 4),
+        'Upper Bound': round(upper, 4),
+        'Outliers': n_outliers,
+        'Outlier %': round(n_outliers / len(df_clean) * 100, 2)
+    }
+
+outlier_df = pd.DataFrame(outlier_report).T
+print('Outlier Detection Report (IQR Method):')
+display(outlier_df)
+
+fig, axes = plt.subplots(2, 4, figsize=(18, 8))
+axes = axes.flatten()
+
+for i, col in enumerate(num_cols):
+    axes[i].boxplot(df_clean[col].dropna(), patch_artist=True,
+                    boxprops=dict(facecolor='#5B9BD5', color='navy'),
+                    medianprops=dict(color='red', linewidth=2),
+                    flierprops=dict(marker='o', color='orange',
+                                   markerfacecolor='orange', markersize=3))
+    axes[i].set_title(col, fontsize=10, fontweight='bold')
+    axes[i].set_xlabel('')
+
+for j in range(len(num_cols), len(axes)):
+    axes[j].set_visible(False)
+
+plt.suptitle('Boxplots — BEFORE Outlier Treatment', fontsize=15,
+             fontweight='bold', y=1.01)
+plt.tight_layout()
+plt.show()
+
+df_no_outliers = df_clean.copy()
+
+for col in num_cols:
+    Q1  = df_no_outliers[col].quantile(0.25)
+    Q3  = df_no_outliers[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
+    df_no_outliers[col] = df_no_outliers[col].clip(lower=lower, upper=upper)
+
+print('Outliers capped using IQR bounds (Winsorisation).')
+
+residual = 0
+for col in num_cols:
+    Q1  = df_no_outliers[col].quantile(0.25)
+    Q3  = df_no_outliers[col].quantile(0.75)
+    IQR = Q3 - Q1
+    residual += ((df_no_outliers[col] < Q1 - 1.5*IQR) |
+                 (df_no_outliers[col] > Q3 + 1.5*IQR)).sum()
+print(f'Residual outliers after capping: {residual}')
+
+fig, axes = plt.subplots(2, 4, figsize=(18, 8))
+axes = axes.flatten()
+
+for i, col in enumerate(num_cols):
+    axes[i].boxplot(df_no_outliers[col].dropna(), patch_artist=True,
+                    boxprops=dict(facecolor='#70AD47', color='darkgreen'),
+                    medianprops=dict(color='red', linewidth=2),
+                    flierprops=dict(marker='o', color='orange',
+                                   markerfacecolor='orange', markersize=3))
+    axes[i].set_title(col, fontsize=10, fontweight='bold')
+
+for j in range(len(num_cols), len(axes)):
+    axes[j].set_visible(False)
+
+plt.suptitle('Boxplots — AFTER Outlier Treatment (Capped)', fontsize=15,
+             fontweight='bold', y=1.01)
+plt.tight_layout()
+plt.show()
+
+df_transformed = df_no_outliers.copy()
+
+df_transformed['sensor_type'] = df_transformed['sensor_type'].astype('category')
+
+int_cols = ['query_id', 'data_size_bytes', 'quantity', 'duration']
+for col in int_cols:
+    df_transformed[col] = pd.to_numeric(df_transformed[col], downcast='integer')
+
+print('Updated Data Types:')
+print(df_transformed.dtypes)
+
+mem_before = df_no_outliers.memory_usage(deep=True).sum() / 1024
+mem_after  = df_transformed.memory_usage(deep=True).sum() / 1024
+print(f'\nMemory: {mem_before:.1f} KB → {mem_after:.1f} KB  '
+      f'(saved {mem_before - mem_after:.1f} KB)')
+
+from sklearn.preprocessing import MinMaxScaler
+
+scale_cols = [c for c in num_cols if c != 'query_id']
+
+scaler = MinMaxScaler()
+df_scaled = df_transformed.copy()
+df_scaled[scale_cols] = scaler.fit_transform(df_scaled[scale_cols])
+
+print('Sample scaled values (first 5 rows):')
+display(df_scaled[scale_cols].head().round(4))
+
+print('\nScaled column ranges (should all be [0, 1]):')
+display(df_scaled[scale_cols].agg(['min', 'max']).round(4))
+
+key_features = ['energy_consumption', 'data_yield',
+                'hypervolume_value', 'transmission_efficiency']
+
+fig, axes = plt.subplots(2, 4, figsize=(18, 8))
+
+for i, col in enumerate(key_features):
+    axes[0, i].hist(df_transformed[col], bins=40, color='#5B9BD5',
+                    edgecolor='white', alpha=0.8)
+    axes[0, i].set_title(f'{col}\n(Before Scaling)', fontsize=9)
+    axes[0, i].set_ylabel('Count')
+
+    axes[1, i].hist(df_scaled[col], bins=40, color='#70AD47',
+                    edgecolor='white', alpha=0.8)
+    axes[1, i].set_title(f'{col}\n(After Min-Max Scaling)', fontsize=9)
+    axes[1, i].set_ylabel('Count')
+
+plt.suptitle('Feature Distributions: Before vs After Scaling',
+             fontsize=14, fontweight='bold', y=1.01)
+plt.tight_layout()
+plt.show()
+
+print('=' * 60)
+print('        DATA VALIDATION REPORT — CLEANED DATASET')
+print('=' * 60)
+
+missing_final = df_scaled.isnull().sum().sum()
+print(f'\nMissing Values: {missing_final}  ', 'DONE' if missing_final == 0 else 'NOT DONE')
+inf_count = np.isinf(df_scaled.select_dtypes(include=[np.number])).sum().sum()
+print(f'Infinite Values: {inf_count}  ', 'DONE' if inf_count == 0 else 'NOT DONE')
+dup_count = df_scaled.duplicated().sum()
+print(f'Duplicate Rows: {dup_count}  ', 'DONE' if dup_count == 0 else 'NOT DONE')
+range_ok = (df_scaled[scale_cols].min().min() >= 0) and \
+           (df_scaled[scale_cols].max().max() <= 1)
+print(f'Scaled cols in [0,1]: {range_ok}  ', 'DONE' if range_ok else 'NOT DONE')
+print(f'Row count: {len(df_scaled):,} ')
+
+print('\nFinal Summary Statistics:')
+display(df_scaled.describe().round(4))
+
+df_scaled.to_csv('cde_ipaas_dataset_cleaned.csv', index=False)
+print('Cleaned & scaled dataset saved → cde_ipaas_dataset_cleaned.csv')
+
+df_transformed.to_csv('cde_ipaas_dataset_cleaned_unscaled.csv', index=False)
+print('Cleaned & unscaled dataset saved → cde_ipaas_dataset_cleaned_unscaled.csv')
+
+test = pd.read_csv('cde_ipaas_dataset_cleaned.csv')
+print(f'\nReload check — shape: {test.shape},  missing: {test.isnull().sum().sum()}')
+display(test.head(3))
