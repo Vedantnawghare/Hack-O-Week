@@ -1,1 +1,1 @@
-# Intelligent-Systems-Engineering-Projects-Hack-o-week-Group-50-
+Hack-O-Week all months tasks
