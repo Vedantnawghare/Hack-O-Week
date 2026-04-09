@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    font-family: "Segoe UI", sans-serif;
+    font-family: "Times New Roman", serif;
     background: #111;
     display: flex;
     justify-content: center;
@@ -99,6 +99,7 @@ body {
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #ccc;
+    font-family: "Times New Roman", serif;
 }
 
 .input-area button {
@@ -108,8 +109,32 @@ body {
     border-radius: 8px;
     padding: 0 16px;
     cursor: pointer;
+    font-family: "Times New Roman", serif;
 }
 
 .input-area button:hover {
+    background: #a80000;
+}
+
+.buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.quick-btn {
+    background: #c70000;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: "Times New Roman", serif;
+}
+
+.quick-btn:hover {
     background: #a80000;
 }

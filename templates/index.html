@@ -23,6 +23,26 @@
 </div>
 
 <script>
+const urlMap = {
+    "Admissions": "https://sitnagpur.edu.in/first-year-admission-procedure",
+    "Fees": "https://sitnagpur.edu.in/fees-structure",
+    "College Timings": "https://sitnagpur.edu.in/",
+    "Courses Offered": "https://sitnagpur.edu.in/courses",
+    "Placements": "https://sitnagpur.edu.in/placement-record",
+    "Hostel Facilities": "https://sitnagpur.edu.in/hostel-facilities",
+    "Library": "https://sitnagpur.edu.in/",
+    "Scholarships": "https://sitnagpur.edu.in/scholarships",
+    "Contact Details": "https://sitnagpur.edu.in/contactus",
+    "Location / Address": "https://goo.gl/maps/example"
+};
+
+function navigateTo(text) {
+    const url = urlMap[text];
+    if (url) {
+        window.location.href = url;
+    }
+}
+
 function quickSend(text) {
     document.getElementById("user-input").value = text;
     sendMessage();
@@ -76,15 +96,36 @@ function sendMessage() {
 
             const botDiv = document.createElement("div");
             botDiv.className = "bot-msg";
-            botDiv.innerHTML = `
-                <img src="/static/logo.png">
-                <div class="bubble">
-                    ${data.replace(
-                        /(https?:\/\/[^\s]+)/g,
-                        '<a href="$1" target="_blank">$1</a>'
-                    )}
-                </div>
-            `;
+            
+            if (data.type === "buttons") {
+                // Render message with buttons
+                let buttonsHTML = `
+                    <img src="/static/logo.png">
+                    <div class="bubble">
+                        ${data.message}
+                        <div class="buttons-container">
+                `;
+                data.buttons.forEach(btn => {
+                    buttonsHTML += `<button class="quick-btn" onclick="navigateTo('${btn}')">${btn}</button>`;
+                });
+                buttonsHTML += `
+                        </div>
+                    </div>
+                `;
+                botDiv.innerHTML = buttonsHTML;
+            } else {
+                // Render regular text message
+                botDiv.innerHTML = `
+                    <img src="/static/logo.png">
+                    <div class="bubble">
+                        ${data.message.replace(
+                            /(https?:\/\/[^\s]+)/g,
+                            '<a href="$1" target="_blank">$1</a>'
+                        )}
+                    </div>
+                `;
+            }
+            
             chatBox.appendChild(botDiv);
 
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -96,6 +137,38 @@ document.getElementById("user-input")
     .addEventListener("keypress", e => {
         if (e.key === "Enter") sendMessage();
     });
+
+// Display initial greeting when page loads
+function displayInitialGreeting() {
+    const chatBox = document.getElementById("chat-box");
+    const botDiv = document.createElement("div");
+    botDiv.className = "bot-msg";
+    
+    const buttonsHTML = `
+        <img src="/static/logo.png">
+        <div class="bubble">
+            Hi 👋 How can I help you today?
+            <div class="buttons-container">
+                <button class="quick-btn" onclick="navigateTo('Admissions')">Admissions</button>
+                <button class="quick-btn" onclick="navigateTo('Fees')">Fees</button>
+                <button class="quick-btn" onclick="navigateTo('College Timings')">College Timings</button>
+                <button class="quick-btn" onclick="navigateTo('Courses Offered')">Courses Offered</button>
+                <button class="quick-btn" onclick="navigateTo('Placements')">Placements</button>
+                <button class="quick-btn" onclick="navigateTo('Hostel Facilities')">Hostel Facilities</button>
+                <button class="quick-btn" onclick="navigateTo('Library')">Library</button>
+                <button class="quick-btn" onclick="navigateTo('Scholarships')">Scholarships</button>
+                <button class="quick-btn" onclick="navigateTo('Contact Details')">Contact Details</button>
+                <button class="quick-btn" onclick="navigateTo('Location / Address')">Location / Address</button>
+            </div>
+        </div>
+    `;
+    botDiv.innerHTML = buttonsHTML;
+    chatBox.appendChild(botDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Initialize greeting on page load
+window.addEventListener("load", displayInitialGreeting);
 </script>
 
 </body>
